@@ -1,0 +1,3 @@
+Design a program that accepts a mathematical expression (a string containing the symbols: +, -, *, /, %, (, ), value). This program will dynamically generate a C program based on the input string, invoke a C compiler to create an equivalent loadable module, and then load and execute the machine code equivalent of the C program to produce the evaluated result of the expression. You may use the following to bootstrap the project:
+
+You can earn 3% extra-credit if you implement the sigmoid(double x) function that resides in your main program but is called from the generated C code to transform the final value of the expression (i.e., sigmoid(expression-value)).
