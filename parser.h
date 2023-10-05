@@ -20,6 +20,7 @@ struct parser_dag {
 		PARSER_DAG_ADD, /* left + right */
 		PARSER_DAG_SUB  /* left - right */
 	} op;
+	int id; /* guaranteed to be unique */
 	double val;
 	struct parser_dag *left;
 	struct parser_dag *right;

@@ -10,7 +10,7 @@
 #include "lexer.h"
 #include "parser.h"
 
-#define MKD(d,o)					\
+#define MKD(p,d,o)					\
 	do {						\
 		size_t n = sizeof (struct parser_dag);	\
 		if (!((d) = malloc(n))) {		\
@@ -19,6 +19,7 @@
 		}					\
 		memset((d), 0, n);			\
 		(d)->op = (o);				\
+		(d)->id = ++(p)->id;			\
 	}						\
 	while (0)
 
@@ -31,6 +32,7 @@
 	} while (0)
 
 struct parser {
+	int id; /* global id */
 	int stop;
 	uint64_t i; /* current token */
 	uint64_t n; /* total tokens */
@@ -92,7 +94,7 @@ expr_primary(struct parser *parser)
 
 	dag = NULL;
 	if (match(parser, LEXER_OP_VAL)) {
-		MKD(dag, PARSER_DAG_VAL);
+		MKD(parser, dag, PARSER_DAG_VAL);
 		dag->val = next(parser)->val;
 		forward(parser);
 	}
@@ -130,7 +132,7 @@ expr_unary(struct parser *parser)
 		}
 	}
 	else if (match(parser, LEXER_OP_SUB)) {
-		MKD(dag, PARSER_DAG_NEG);
+		MKD(parser, dag, PARSER_DAG_NEG);
 		forward(parser);
 		if (!(dag->right = expr_unary(parser))) {
 			TRACE_ONCE(parser, "invalid unary '-' operand");
@@ -160,12 +162,12 @@ expr_multiplicative_(struct parser *parser, struct parser_dag *left)
 	dag = left;
 	for (;;) {
 		if (match(parser, LEXER_OP_MUL)) {
-			MKD(dag, PARSER_DAG_MUL);
+			MKD(parser, dag, PARSER_DAG_MUL);
 			dag->left = left;
 			forward(parser);
 		}
 		else if (match(parser, LEXER_OP_DIV)) {
-			MKD(dag, PARSER_DAG_DIV);
+			MKD(parser, dag, PARSER_DAG_DIV);
 			dag->left = left;
 			forward(parser);
 		}
@@ -216,12 +218,12 @@ expr_additive_(struct parser *parser, struct parser_dag *left)
 	dag = left;
 	for (;;) {
 		if (match(parser, LEXER_OP_ADD)) {
-			MKD(dag, PARSER_DAG_ADD);
+			MKD(parser, dag, PARSER_DAG_ADD);
 			dag->left = left;
 			forward(parser);
 		}
 		else if (match(parser, LEXER_OP_SUB)) {
-			MKD(dag, PARSER_DAG_SUB);
+			MKD(parser, dag, PARSER_DAG_SUB);
 			dag->left = left;
 			forward(parser);
 		}
