@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 #define ARRAY_SIZE(a) ( (sizeof (a)) / (sizeof (a[0])) )
 

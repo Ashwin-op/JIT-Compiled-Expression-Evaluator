@@ -13,6 +13,12 @@
 
 /* export LD_LIBRARY_PATH=. */
 
+double sigmoid(double x) {
+    printf("sigmoid(%f) = %f\n", x, 1.0 / (1.0 + exp(-x)));
+
+    return x;
+}
+
 static const char *
 generate_evaluate(const struct parser_dag *dag) {
     char *buf = malloc(1000);
@@ -54,7 +60,9 @@ generate(const struct parser_dag *dag, FILE *file) {
     fprintf(file, "%s", DIV);
     fprintf(file, "%s", NEG);
 
-    fprintf(file, "double evaluate(void) { return %s; }", generate_evaluate(dag));
+    fprintf(file, "double (*sigmoid)(double) = (double (*)(double))%lu;\n", (unsigned long) sigmoid);
+
+    fprintf(file, "double evaluate(void) { return sigmoid(%s); }\n", generate_evaluate(dag));
 }
 
 typedef double (*evaluate_t)(void);
