@@ -19,50 +19,39 @@ double sigmoid(double x) {
     return x;
 }
 
-static const char *
-generate_evaluate(const struct parser_dag *dag) {
-    char *buf = malloc(1000);
-    switch (dag->op) {
-        case PARSER_DAG_VAL:
-            sprintf(buf, "%f", dag->val);
-            return buf;
-        case PARSER_DAG_NEG:
-            sprintf(buf, "negation(%s)", generate_evaluate(dag->right));
-            return buf;
-        case PARSER_DAG_ADD:
-            sprintf(buf, "addition(%s, %s)", generate_evaluate(dag->left), generate_evaluate(dag->right));
-            return buf;
-        case PARSER_DAG_SUB:
-            sprintf(buf, "subtraction(%s, %s)", generate_evaluate(dag->left), generate_evaluate(dag->right));
-            return buf;
-        case PARSER_DAG_MUL:
-            sprintf(buf, "multiplication(%s, %s)", generate_evaluate(dag->left), generate_evaluate(dag->right));
-            return buf;
-        case PARSER_DAG_DIV:
-            sprintf(buf, "division(%s, %s)", generate_evaluate(dag->left), generate_evaluate(dag->right));
-            return buf;
-        default:
-            return "0";
+static void
+reflect(const struct parser_dag *dag, FILE *file) {
+    if (dag) {
+        reflect(dag->left, file);
+        reflect(dag->right, file);
+
+        if (PARSER_DAG_VAL == dag->op) {
+            fprintf(file, "double t%d = %f;\n", dag->id, dag->val);
+        } else if (PARSER_DAG_NEG == dag->op) {
+            fprintf(file, "double t%d = - t%d;\n", dag->id, dag->right->id);
+        } else if (PARSER_DAG_MUL == dag->op) {
+            fprintf(file, "double t%d = t%d * t%d;\n", dag->id, dag->left->id, dag->right->id);
+        } else if (PARSER_DAG_DIV == dag->op) {
+            fprintf(file, "double t%d = t%d ? (t%d / t%d) : 0.0;\n", dag->id, dag->right->id, dag->left->id,
+                    dag->right->id);
+        } else if (PARSER_DAG_ADD == dag->op) {
+            fprintf(file, "double t%d = t%d + t%d;\n", dag->id, dag->left->id, dag->right->id);
+        } else if (PARSER_DAG_SUB == dag->op) {
+            fprintf(file, "double t%d = t%d - t%d;\n", dag->id, dag->left->id, dag->right->id);
+        } else {
+            EXIT("software");
+        }
     }
 }
 
 static void
 generate(const struct parser_dag *dag, FILE *file) {
-    const char *ADD = "double addition(double a, double b) { return a + b; }\n";
-    const char *SUB = "double subtraction(double a, double b) { return a - b; }\n";
-    const char *MUL = "double multiplication(double a, double b) { return a * b; }\n";
-    const char *DIV = "double division(double a, double b) { return a / b; }\n";
-    const char *NEG = "double negation(double a) { return -a; }\n";
-
-    fprintf(file, "%s", ADD);
-    fprintf(file, "%s", SUB);
-    fprintf(file, "%s", MUL);
-    fprintf(file, "%s", DIV);
-    fprintf(file, "%s", NEG);
-
     fprintf(file, "double (*sigmoid)(double) = (double (*)(double))%lu;\n", (unsigned long) sigmoid);
 
-    fprintf(file, "double evaluate(void) { return sigmoid(%s); }\n", generate_evaluate(dag));
+    fprintf(file, "double evaluate(void) {\n");
+    reflect(dag, file);
+    fprintf(file, "return sigmoid(t%d);\n", dag->id);
+    fprintf(file, "}\n");
 }
 
 typedef double (*evaluate_t)(void);
